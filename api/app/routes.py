@@ -1,8 +1,7 @@
-"""HTTP routes. Phase 1: health only; search/assist/audit follow."""
+"""HTTP routes. Phase 2: health; search/assist/audit follow."""
 
 from __future__ import annotations
 
-import psycopg
 from fastapi import APIRouter
 
 from . import db
@@ -15,17 +14,23 @@ router = APIRouter()
 def health() -> dict:
     s = get_settings()
     try:
-        embedding_meta = db.get_meta("embedding")
-        n = db.counts()
-        db_status = "up"
-    except psycopg.OperationalError:
-        embedding_meta, n, db_status = None, {"chunks": 0, "docs": 0}, "down"
-
-    return {
-        "status": "ok" if db_status == "up" else "degraded",
-        "db": db_status,
-        "provider": s.provider,
-        "seeded": embedding_meta is not None,
-        "embedding": embedding_meta,
-        **n,
-    }
+        store = db.get_store()
+        embedding_meta = store.get_meta("embedding")
+        n = store.counts()
+        return {
+            "status": "ok",
+            "db": "up",
+            "backend": store.backend,
+            "provider": s.provider,
+            "seeded": embedding_meta is not None,
+            "embedding": embedding_meta,
+            **n,
+        }
+    except Exception as e:  # health must never 500 — report, don't raise
+        return {
+            "status": "degraded",
+            "db": "down",
+            "provider": s.provider,
+            "seeded": False,
+            "error": str(e),
+        }
