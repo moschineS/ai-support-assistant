@@ -1,0 +1,21 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: assist-db
+    environment:
+      POSTGRES_USER: assist
+      POSTGRES_PASSWORD: assist
+      POSTGRES_DB: assist
+    # Host port 5433 so we never collide with a local Postgres on 5432.
+    ports:
+      - "5433:5432"
+    volumes:
+      - assist_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U assist -d assist"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  assist_pgdata:
