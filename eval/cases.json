@@ -1,0 +1,110 @@
+{
+  "description": "Evaluation cases for the Aventra support assistant. 'expected_docs': retrieval hit@k counts a hit when any of these doc ids appears in the top-k. 'must_contain': groups of alternatives; the draft must contain at least one term from every group (case-insensitive). 'expect_refusal': the pipeline must end in a refusal event for this case.",
+  "cases": [
+    {
+      "id": "pushtan-delay",
+      "question": "Hello, since this morning I am not getting approval notifications on my phone when I log in. The screen shows code EB-1042. Is my account hacked?",
+      "expected_docs": ["incident-2026-07-14-pushtan-delay"],
+      "must_contain": [["Pending approvals"], ["EB-1042"]]
+    },
+    {
+      "id": "login-loop",
+      "question": "Every time I log in on the website it just sends me back to the login page in a loop. I approved it on my phone!",
+      "expected_docs": ["incident-2026-06-30-login-loop"],
+      "must_contain": [["cache", "private window", "app"]]
+    },
+    {
+      "id": "pos-decline",
+      "question": "My card was declined at the supermarket today around noon even though I have money. The receipt says CP-0031. Very embarrassing!",
+      "expected_docs": ["incident-2026-07-02-pos-declines"],
+      "must_contain": [["CP-0031"], ["no", "not"]]
+    },
+    {
+      "id": "statement-missing",
+      "question": "I still cannot find my April account statement in the mailbox. Where is it?",
+      "expected_docs": ["incident-2026-05-21-statements-missing"],
+      "must_contain": [["filter", "30 days", "April"]]
+    },
+    {
+      "id": "transfer-during-outage",
+      "question": "I submitted a transfer this morning while your website kept showing a technical error. Did my transfer go through or do I need to send it again?",
+      "expected_docs": ["incident-2026-04-11-web-500"],
+      "must_contain": [["Order history", "order history"]]
+    },
+    {
+      "id": "android-crash",
+      "question": "Since I joined the Android beta program your app crashes immediately when I open it. Error MB-1103.",
+      "expected_docs": ["incident-2026-07-28-android-crash"],
+      "must_contain": [["web banking", "browser", "beta"]]
+    },
+    {
+      "id": "sepa-duration",
+      "question": "How long does a normal bank transfer take to arrive? I sent money to my landlord on Friday evening.",
+      "expected_docs": ["faq-sepa-transfer-times"],
+      "must_contain": [["business day"]]
+    },
+    {
+      "id": "password-and-phone",
+      "question": "I forgot my online banking password and I also have a new phone, so the TAN app is gone too. How do I get back in?",
+      "expected_docs": ["faq-forgot-password", "faq-lost-phone"],
+      "must_contain": [["letter", "activation"]]
+    },
+    {
+      "id": "dispute-charge",
+      "question": "There is a charge of 89.90 EUR on my card from a merchant I do not recognize. I never bought anything there. How do I get my money back?",
+      "expected_docs": ["faq-dispute-charge", "procedure-chargeback"],
+      "must_contain": [["dispute", "unauthorized"]]
+    },
+    {
+      "id": "giro-plus-fee",
+      "question": "What does the Giro Plus account cost per month and is there a way to avoid the fee?",
+      "expected_docs": ["product-giro-plus", "faq-account-fees"],
+      "must_contain": [["9.90"], ["3,000", "3000", "salary"]]
+    },
+    {
+      "id": "gold-insurance",
+      "question": "I have the Gold credit card. Am I insured if I have to cancel my holiday trip?",
+      "expected_docs": ["product-card-gold"],
+      "must_contain": [["5,000", "cancellation"], ["half", "card"]]
+    },
+    {
+      "id": "deceased-account",
+      "question": "My grandmother passed away last week. She had her account with you. What do we need to do and can we pay for the funeral from her account?",
+      "expected_docs": ["procedure-deceased-accounts"],
+      "must_contain": [["death certificate"], ["funeral"]]
+    },
+    {
+      "id": "kyc-deadline",
+      "question": "I received a letter that I must re-verify my identity. What happens if I do not do this in time?",
+      "expected_docs": ["procedure-kyc-reverification"],
+      "must_contain": [["90 days", "restricted", "blocked"]]
+    },
+    {
+      "id": "instant-reject",
+      "question": "I tried to send an instant transfer and it was rejected with TR-4400. Is the recipient IBAN wrong?",
+      "expected_docs": ["incident-2026-06-05-instant-reject", "product-instant-transfer"],
+      "must_contain": [["standard", "retry", "later"]]
+    },
+    {
+      "id": "refusal-gold-bullion",
+      "question": "What are your current gold bullion prices and can I buy krugerrands at the branch?",
+      "expected_docs": [],
+      "must_contain": [],
+      "expect_refusal": true
+    },
+    {
+      "id": "refusal-crypto",
+      "question": "How do I open a bitcoin wallet with your bank and what are your crypto trading fees?",
+      "expected_docs": [],
+      "must_contain": [],
+      "expect_refusal": true
+    },
+    {
+      "id": "refusal-tax-service",
+      "question": "How do I file my income tax return through your bank's tax advisory service?",
+      "expected_docs": [],
+      "must_contain": [],
+      "expect_refusal": true
+    }
+  ]
+}
