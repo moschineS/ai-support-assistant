@@ -73,7 +73,9 @@ class PgStore:
     def __init__(self, url: str):
         from psycopg_pool import ConnectionPool
 
-        self._pool = ConnectionPool(url, min_size=1, max_size=5, open=True)
+        # timeout=5: a dead database must surface as a fast, explicit error
+        # (health shows "degraded"), not a 30s hang per request.
+        self._pool = ConnectionPool(url, min_size=1, max_size=5, open=True, timeout=5)
 
     # -- schema / seed -------------------------------------------------
 

@@ -40,9 +40,9 @@ Notes an operator cares about:
 
 - **One writable store.** Vectors, metadata, and the audit log live in the same Postgres — one
   backup story, one transaction boundary, no vector-DB vendor to onboard (ADR-002).
-- **Ingestion is a job, not an endpoint.** The API's `/api/ingest` exists for local convenience;
-  in the target, ingestion runs as a Container Apps job triggered by document changes, so the API
-  surface stays read-only towards the corpus.
+- **Ingestion is a job, not an endpoint.** Locally it is a CLI (`python -m app.ingest`); in the
+  target it runs as a Container Apps job triggered by document changes. The API surface stays
+  read-only towards the corpus by construction — there is deliberately no ingestion route.
 - **Data residency.** All data-bearing services are region-pinned PaaS. With Azure OpenAI, prompts
   and completions are not used for training; for stricter regimes the provider gateway swaps to an
   in-tenant model server (that is literally the demo's Ollama path).
