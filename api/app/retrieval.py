@@ -11,8 +11,9 @@ is the standard, defensible fusion for exactly this situation (ADR-003).
 
 Fail-closed guards (ADR-005):
 - unseeded store -> refuse with instructions, never empty-answer
-- seeded provider != active provider -> refuse (a 768-dim query against
-  1536-dim vectors must be a hard error, not a silently wrong ranking)
+- seeded embedding model != active embedding model -> refuse (querying a
+  vector space with a different model's embeddings must be a hard error,
+  not a silently wrong ranking)
 - weak evidence (best cosine below threshold, no keyword hit) is
   reported to the caller; the assist layer refuses to draft from it
 """
@@ -48,16 +49,17 @@ class RetrievalResult:
 
 
 def check_seed_compatible(store: Store, s: Settings) -> dict[str, Any]:
-    """The seeded embedding space must match the active provider."""
+    """The seeded embedding space must match the active embedding model."""
     meta = store.get_meta("embedding")
     if meta is None:
         raise RetrievalError(
             "knowledge base is not seeded — run: python -m app.ingest"
         )
-    if meta.get("provider") != s.provider:
+    if meta.get("model") != s.openai_embed_model:
         raise RetrievalError(
-            f"knowledge base was seeded with provider '{meta.get('provider')}'"
-            f" but PROVIDER={s.provider} is active — re-run: python -m app.ingest"
+            f"knowledge base was seeded with embedding model"
+            f" '{meta.get('model')}' but OPENAI_EMBED_MODEL="
+            f"{s.openai_embed_model} is active — re-run: python -m app.ingest"
         )
     return meta
 

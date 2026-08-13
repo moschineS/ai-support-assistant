@@ -141,12 +141,12 @@ def assist_events(
     s = s or get_settings()
     store = store or get_store()
     gateway = gateway or get_gateway(s)
-    chat_model = s.ollama_chat_model if s.provider == "ollama" else s.openai_chat_model
+    chat_model = s.openai_chat_model
     t0 = time.perf_counter()
 
     def refuse(reason: str, detail: str, sources: list[dict[str, Any]], **audit_kw):
         audit_id = _audit(
-            store, message=message, sources=sources, provider=s.provider,
+            store, message=message, sources=sources, provider="openai",
             chat_model=chat_model, t0=t0, refused=True, refusal_reason=reason,
             **audit_kw,
         )
@@ -229,7 +229,7 @@ def assist_events(
 
     # 5. Audit + done --------------------------------------------------
     audit_id = _audit(
-        store, message=message, sources=sources, provider=s.provider,
+        store, message=message, sources=sources, provider="openai",
         chat_model=chat_model, t0=t0, draft=draft, usage=usage,
     )
     yield "done", {

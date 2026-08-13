@@ -1,9 +1,9 @@
 """Environment-driven settings.
 
-One switch (`PROVIDER`) selects the LLM substrate for both chat and
-embeddings: "ollama" for the fully local/offline path, "openai" for the
-cloud path. Everything else has sensible defaults for the docker-compose
-setup in the repo root.
+The model substrate is the OpenAI API locally and Azure OpenAI in the
+cloud target (identical wire format). Models are configurable; changing
+the embedding model requires re-seeding, which the API enforces via the
+seed-compatibility guard (ADR-005).
 """
 
 from __future__ import annotations
@@ -22,12 +22,6 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
-
-    provider: str = "ollama"  # "ollama" | "openai"
-
-    ollama_base_url: str = "http://localhost:11434"
-    ollama_chat_model: str = "llama3.2:3b"
-    ollama_embed_model: str = "nomic-embed-text"
 
     openai_api_key: str = ""
     openai_chat_model: str = "gpt-4o-mini"

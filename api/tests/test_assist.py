@@ -13,8 +13,6 @@ from app.db import SqliteStore
 class ScriptedGateway:
     """embed() returns a fixed vector; chat_stream() plays a script."""
 
-    provider = "openai"
-
     def __init__(self, qvec, script=None):
         self.qvec = qvec
         self.script = script
@@ -32,7 +30,7 @@ class ScriptedGateway:
 
 
 def settings() -> Settings:
-    return Settings(provider="openai", _env_file=None)
+    return Settings(openai_embed_model="fake", _env_file=None)
 
 
 @pytest.fixture

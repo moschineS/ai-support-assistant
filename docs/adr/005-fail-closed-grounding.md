@@ -12,8 +12,9 @@ guaranteed; system behaviour around the LLM can.
 
 Every step that can go wrong resolves to an explicit **refusal**, never a best-effort answer:
 
-1. Unseeded store or embedding-provider mismatch → refuse before retrieval (a 768-dim query
-   against 1536-dim vectors must be a hard error, not a silently wrong ranking).
+1. Unseeded store or embedding-model mismatch → refuse before retrieval (querying a vector
+   space with a different model's embeddings must be a hard error, not a silently wrong
+   ranking).
 2. Weak evidence (best cosine below threshold, no keyword hit) → refuse **without calling the
    LLM**. The model never sees a question the corpus cannot support.
 3. The model may declare insufficiency (`COVERAGE_GAP` sentinel) → refusal, by design not failure.

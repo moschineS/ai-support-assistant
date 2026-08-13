@@ -83,7 +83,7 @@ def health() -> dict:
             "status": "ok",
             "db": "up",
             "backend": store.backend,
-            "provider": s.provider,
+            "provider": "openai",
             "seeded": embedding_meta is not None,
             "embedding": embedding_meta,
             **n,
@@ -92,7 +92,7 @@ def health() -> dict:
         return {
             "status": "degraded",
             "db": "down",
-            "provider": s.provider,
+            "provider": "openai",
             "seeded": False,
             "error": str(e),
         }

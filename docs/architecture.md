@@ -44,8 +44,8 @@ Notes an operator cares about:
   target it runs as a Container Apps job triggered by document changes. The API surface stays
   read-only towards the corpus by construction — there is deliberately no ingestion route.
 - **Data residency.** All data-bearing services are region-pinned PaaS. With Azure OpenAI, prompts
-  and completions are not used for training; for stricter regimes the provider gateway swaps to an
-  in-tenant model server (that is literally the demo's Ollama path).
+  and completions are not used for training; for stricter regimes the gateway interface (two
+  methods: embed, chat_stream) accommodates an in-environment model server with no caller changes.
 - **Log costs.** Structured logs with sampling and a monthly budget alert — log ingestion is the
   classic silent cost driver in this stack.
 
@@ -56,14 +56,14 @@ flowchart LR
     subgraph laptop [Laptop]
         B2[Browser\nlocalhost:8000]
         API2[uvicorn\nFastAPI + SPA static]
-        OLL[Ollama\nllama3.2:3b + nomic-embed-text]
         PG2[(pgvector container\nhost port 5433)]
         SQL[(assist.db\nSQLite + FTS5 fallback)]
         CORPUS[corpus/ *.md]
     end
+    OAI[OpenAI API\nchat + embeddings]
 
     B2 --> API2
-    API2 -->|PROVIDER=ollama| OLL
+    API2 -->|HTTPS| OAI
     API2 -->|postgresql://| PG2
     API2 -.->|sqlite:/// fallback| SQL
     CORPUS -->|python -m app.ingest| API2
@@ -74,15 +74,16 @@ flowchart LR
 | Concern | Local demo | Azure target | Switched by |
 |---|---|---|---|
 | Compute | `uvicorn` process | Container Apps | deployment |
-| Chat + embeddings | Ollama / OpenAI API | Azure OpenAI | `PROVIDER` + endpoint config |
+| Chat + embeddings | OpenAI API | Azure OpenAI | endpoint + credentials |
 | Vector + keyword store | pgvector container or SQLite | PG Flexible Server + pgvector | `DATABASE_URL` |
 | Raw documents | `corpus/` folder | Blob Storage | ingestion job source |
 | Auth | none (localhost) | Entra ID (OIDC) | reverse-proxy / middleware |
 | Secrets | `.env` | Key Vault | environment |
 
-The **fallback chain is the resilience story**: the demo runs with Docker + Ollama fully offline;
-without Docker it runs on SQLite; without Ollama it runs against OpenAI. Same code, same
-semantics, verified by the same tests.
+The **storage fallback is the resilience story**: with Docker the demo runs on pgvector; without
+Docker it falls back to SQLite + FTS5 behind the same store interface. Same code, same ranking
+semantics, verified by the same tests — and the same adapter pattern is how an in-environment
+model server would slot in behind the gateway for strict no-egress policies.
 
 ## Request flow (assist)
 
@@ -90,11 +91,11 @@ semantics, verified by the same tests.
 sequenceDiagram
     participant A as Agent (SPA)
     participant R as FastAPI /api/assist
-    participant G as Gateway (Ollama/OpenAI)
+    participant G as Gateway (OpenAI)
     participant S as Store (pgvector/SQLite)
 
     A->>R: POST customer message (SSE)
-    R->>S: seed/provider compatibility check
+    R->>S: seed/embedding-model compatibility check
     R->>G: embed(query)
     R->>S: vector_ranked + keyword_ranked
     R->>R: RRF fusion + evidence gate
@@ -125,7 +126,7 @@ sequenceDiagram
 | `meta` | `{sources, weak}` | Retrieved evidence, sent before any generation |
 | `token` | `{t}` | Draft text increment |
 | `done` | `{audit_id, draft, citations, usage, latency_ms}` | Validated draft |
-| `refusal` | `{reason, detail, audit_id}` | No draft: `weak_evidence`, `model_reported_gap`, `draft_missing_citations`, `draft_citation_invalid`, `retrieval_unavailable`, `gateway_error` |
+| `refusal` | `{reason, detail, audit_id}` | No draft: `weak_evidence`, `model_reported_gap`, `draft_missing_citations`, `draft_citation_invalid`, `retrieval_unavailable`, `gateway_unavailable`, `gateway_error` |
 | `error` | `{detail}` | Infrastructure failure mid-stream |
 
 ## Data model
@@ -140,6 +141,6 @@ audit_log  id, ts, request_text, retrieved(jsonb), draft, refused,
 ```
 
 The `chunks` table is recreated on every seed (the corpus is the source of truth; the table is
-derived state) with the embedding dimension of the active provider. Exact nearest-neighbour scan
+derived state) with the embedding dimension of the active embedding model. Exact nearest-neighbour scan
 is intentional at demo scale; an `hnsw` index is the documented next step once the corpus grows
 (ADR-002).

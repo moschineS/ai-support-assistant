@@ -13,8 +13,6 @@ from app.retrieval import RetrievalError, retrieve, rrf_fuse
 class FakeGateway:
     """Returns a fixed query vector; embeds nothing for real."""
 
-    provider = "openai"
-
     def __init__(self, qvec):
         self.qvec = qvec
 
@@ -22,8 +20,8 @@ class FakeGateway:
         return [self.qvec for _ in texts]
 
 
-def settings(provider="openai") -> Settings:
-    return Settings(provider=provider, _env_file=None)
+def settings(embed_model="fake") -> Settings:
+    return Settings(openai_embed_model=embed_model, _env_file=None)
 
 
 CHUNKS = [
@@ -74,11 +72,11 @@ def test_unseeded_store_refuses(tmp_path):
         retrieve("q", store=st, gateway=FakeGateway([1, 0, 0, 0]), s=settings())
 
 
-def test_provider_mismatch_refuses(store):
-    with pytest.raises(RetrievalError, match="seeded with provider"):
+def test_embed_model_mismatch_refuses(store):
+    with pytest.raises(RetrievalError, match="seeded with embedding model"):
         retrieve(
             "q", store=store, gateway=FakeGateway([1, 0, 0, 0]),
-            s=settings(provider="ollama"),
+            s=settings(embed_model="some-other-model"),
         )
 
 

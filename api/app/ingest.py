@@ -6,10 +6,10 @@ Run from the ``api/`` directory:
 
 The seed is idempotent: it recreates the ``chunks`` table every run (the
 corpus is the source of truth, the table is derived state) and records the
-active ``(provider, model, dim)`` in ``meta``. The API refuses to answer
-when the running embedding provider disagrees with the seeded one — a
-768-dim query against 1536-dim vectors must be a hard error, not a silent
-wrong answer (ADR-005).
+active ``(model, dim)`` in ``meta``. The API refuses to answer when the
+running embedding model disagrees with the seeded one — querying a vector
+space with a different model's embeddings must be a hard error, not a
+silent wrong answer (ADR-005).
 
 Chunking is heading-aware rather than fixed-window: support documents are
 short and well-structured, so ``##`` sections are the natural retrieval
@@ -146,9 +146,7 @@ def vector_literal(v: list[float]) -> str:
 def seed(corpus_dir: Path) -> None:
     s = get_settings()
     gateway = get_gateway(s)
-    embed_model = (
-        s.ollama_embed_model if s.provider == "ollama" else s.openai_embed_model
-    )
+    embed_model = s.openai_embed_model
 
     paths = sorted(corpus_dir.glob("*.md"))
     if not paths:
@@ -159,7 +157,7 @@ def seed(corpus_dir: Path) -> None:
     chunks = [c for d in docs for c in chunk_doc(d)]
     print(f"Corpus: {len(docs)} documents -> {len(chunks)} chunks")
 
-    print(f"Embedding with {s.provider}/{embed_model} ...")
+    print(f"Embedding with {embed_model} ...")
     vectors: list[list[float]] = []
     for i in range(0, len(chunks), EMBED_BATCH):
         batch = chunks[i : i + EMBED_BATCH]
@@ -191,7 +189,7 @@ def seed(corpus_dir: Path) -> None:
     store.set_meta(
         "embedding",
         {
-            "provider": s.provider,
+            "provider": "openai",
             "model": embed_model,
             "dim": dim,
             "seeded_at": dt.datetime.now(dt.timezone.utc).isoformat(),
@@ -202,7 +200,7 @@ def seed(corpus_dir: Path) -> None:
 
     print(
         f"Seeded: {len(chunks)} chunks, dim={dim},"
-        f" provider={s.provider}, backend={store.backend}"
+        f" model={embed_model}, backend={store.backend}"
     )
 
 

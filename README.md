@@ -30,7 +30,7 @@ python -m venv .venv
 pip install -r api/requirements.txt
 
 # 2. Configuration
-cp .env.example .env        # then edit — see "Choosing the LLM provider" below
+cp .env.example .env        # then set OPENAI_API_KEY — see "Model configuration" below
 
 # 3. Database — pick ONE:
 docker compose up -d        # (a) Postgres + pgvector on host port 5433  — primary path
@@ -45,22 +45,17 @@ cd api && python -m uvicorn app.main:app --port 8000
 
 Open **http://localhost:8000** — the agent workspace loads with three sample requests ready to try.
 
-### Choosing the LLM provider
+### Model configuration
 
-One switch in `.env` selects the substrate for both chat and embeddings:
+The model substrate is the **OpenAI API** locally and **Azure OpenAI** in the target
+architecture — the wire format is identical, so the move is an endpoint and credential change,
+not a code change. Set `OPENAI_API_KEY` in `.env`; the models default to `gpt-4o-mini`
+(drafting) and `text-embedding-3-small` (embeddings) and are configurable.
 
-| `PROVIDER=` | What it uses | When to use it |
-|---|---|---|
-| `ollama` | Local Ollama: `llama3.2:3b` + `nomic-embed-text` | Fully **offline** demo; data never leaves the machine |
-| `openai` | OpenAI API: `gpt-4o-mini` + `text-embedding-3-small` | Cloud path (Azure OpenAI in the target architecture) |
-
-For the Ollama path, install [Ollama](https://ollama.com) and pull the models once
-(`ollama pull llama3.2:3b && ollama pull nomic-embed-text`, ~2–3 GB).
-
-**Switching providers requires re-seeding** (`python -m app.ingest`): the embedding dimensions
-differ (768 vs 1536), so the vector space must be rebuilt. The seed records provider, model, and
-dimension; the API **refuses to serve** if the running provider disagrees with the seeded one —
-a wrong-dimension query must be a hard error, not a silently wrong answer.
+**Changing the embedding model requires re-seeding** (`python -m app.ingest`): embeddings from
+different models live in incompatible vector spaces. The seed records the model and dimension,
+and the API **refuses to serve** if the running embedding model disagrees with the seeded one —
+a mismatched query must be a hard error, not a silently wrong answer.
 
 ---
 
@@ -99,7 +94,7 @@ recorded as ADRs in **[docs/adr/](docs/adr/)**:
 | [001](docs/adr/001-agent-assist-not-customer-bot.md) | Agent-assist, not a customer-facing bot |
 | [002](docs/adr/002-pgvector-over-vector-db.md) | pgvector in Postgres over a dedicated vector DB |
 | [003](docs/adr/003-hybrid-retrieval-rrf.md) | Hybrid retrieval with Reciprocal Rank Fusion |
-| [004](docs/adr/004-provider-gateway.md) | Provider gateway: Ollama local / (Azure) OpenAI cloud, raw HTTP |
+| [004](docs/adr/004-provider-gateway.md) | Model gateway: OpenAI API locally / Azure OpenAI in the cloud, raw HTTP |
 | [005](docs/adr/005-fail-closed-grounding.md) | Fail-closed grounding, mandatory citations, audit log |
 
 The same codebase runs in both environments; only configuration changes:
@@ -107,7 +102,7 @@ The same codebase runs in both environments; only configuration changes:
 | Concern | Local demo | Azure target |
 |---|---|---|
 | Compute | `uvicorn` process | Container Apps |
-| LLM + embeddings | Ollama (or OpenAI API) | Azure OpenAI |
+| LLM + embeddings | OpenAI API | Azure OpenAI |
 | Storage | Dockerized pgvector or SQLite | PG Flexible Server + pgvector |
 | Documents | `corpus/` folder | Blob Storage + ingestion job |
 | Auth | none (localhost) | Entra ID in front of the app |
@@ -119,13 +114,13 @@ The same codebase runs in both environments; only configuration changes:
 
 `eval/cases.json` holds 17 cases: 14 answerable (expected source documents + required draft
 content) and 3 that **must** be refused (out-of-corpus topics). Checks are deterministic — no
-LLM-as-judge — so runs are reproducible and comparable across providers:
+LLM-as-judge — so runs are reproducible and directly comparable:
 
 ```bash
 python eval/run_eval.py
 ```
 
-Results on the **openai** path (`gpt-4o-mini` + `text-embedding-3-small`, 2026-08-09):
+Results (`gpt-4o-mini` + `text-embedding-3-small`, 2026-08-09):
 
 | Metric | Result |
 |---|---|
@@ -135,8 +130,8 @@ Results on the **openai** path (`gpt-4o-mini` + `text-embedding-3-small`, 2026-0
 | Refusal handling (must-refuse cases) | **3/3** |
 | Wall time | 50.5 s |
 
-To reproduce on the Ollama path: set `PROVIDER=ollama`, re-seed, re-run (expect the smaller
-3B model to trade some groundedness for full offline operation).
+The checks are deterministic, so re-runs are directly comparable whenever models or retrieval
+parameters change.
 
 ## Tests
 

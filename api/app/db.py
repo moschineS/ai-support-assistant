@@ -14,9 +14,9 @@ The schema is created by the seed CLI (``python -m app.ingest``), not at
 API startup. An unseeded database is a refusal condition the API reports
 honestly, never something it silently repairs (fail-closed; ADR-005).
 The ``chunks`` table is created per-seed because the embedding dimension
-depends on the provider (nomic-embed-text = 768, text-embedding-3-small
-= 1536); the seed records ``(provider, model, dim)`` in ``meta`` and the
-API refuses to serve when the running provider disagrees.
+depends on the embedding model; the seed records ``(model, dim)`` in
+``meta`` and the API refuses to serve when the running embedding model
+disagrees — embeddings from different models are incompatible spaces.
 """
 
 from __future__ import annotations

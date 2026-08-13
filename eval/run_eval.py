@@ -69,7 +69,7 @@ def run_case(case: dict) -> dict:
 def main() -> None:
     s = get_settings()
     cases = json.loads((EVAL_DIR / "cases.json").read_text(encoding="utf-8"))["cases"]
-    print(f"Provider: {s.provider} | cases: {len(cases)}")
+    print(f"Models: {s.openai_chat_model} + {s.openai_embed_model} | cases: {len(cases)}")
     print("-" * 72)
 
     t0 = time.perf_counter()
